@@ -569,10 +569,11 @@
         <button class="nav-btn" id="nextBtn">Вперёд →</button>
     </div>
 
-    <!-- AUDIO ELEMENTS -->
-    <audio id="audioGreen" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3"></audio>
-    <audio id="audioYellow" src="https://assets.mixkit.co/sfx/preview/mixkit-game-level-music-689.mp3"></audio>
-    <audio id="audioRed" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3"></audio>
+    <!-- AUDIO ELEMENTS - Updated with your tracks -->
+    <!-- URLs converted to raw.githubusercontent.com for direct playback -->
+    <audio id="audioGreen" src="https://raw.githubusercontent.com/berdichevskiia/speed_dating_night/main/Slow%20Stantion%20-%20Enigma%20Love%20%20%28zaycev.net%29.mp3" preload="auto"></audio>
+    <audio id="audioYellow" src="https://raw.githubusercontent.com/berdichevskiia/speed_dating_night/main/HRCRX%20-%20Holiday%20%20%28zaycev.net%29.mp3" preload="auto"></audio>
+    <audio id="audioRed" src="https://raw.githubusercontent.com/berdichevskiia/speed_dating_night/main/Synthwave%20Goose%20-%20Tyumen%20%20%281985%29%20%28zaycev.net%29.mp3" preload="auto"></audio>
     <audio id="audioPortal" src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-interface-beep-903.mp3"></audio>
 
     <script>
@@ -704,13 +705,12 @@
         const audioRed = document.getElementById('audioRed');
 
         function playSound(type) {
-            audioGreen.pause(); audioGreen.currentTime = 0;
-            audioYellow.pause(); audioYellow.currentTime = 0;
-            audioRed.pause(); audioRed.currentTime = 0;
+            // Stop all sounds first
+            [audioGreen, audioYellow, audioRed].forEach(a => { a.pause(); a.currentTime = 0; });
 
-            if (type === 'green') audioGreen.play().catch(e => {});
-            if (type === 'yellow') audioYellow.play().catch(e => {});
-            if (type === 'red') audioRed.play().catch(e => {});
+            if (type === 'green') audioGreen.play().catch(e => console.log("Green audio play failed:", e));
+            if (type === 'yellow') audioYellow.play().catch(e => console.log("Yellow audio play failed:", e));
+            if (type === 'red') audioRed.play().catch(e => console.log("Red audio play failed:", e));
         }
 
         function startInteractiveCycle() {
@@ -743,7 +743,7 @@
             signalIcon.textContent = '⏸️';
             signalText.textContent = 'ОЖИДАНИЕ';
             signalSub.textContent = 'Нажмите СТАРТ для начала раунда';
-            audioGreen.pause(); audioYellow.pause(); audioRed.pause();
+            [audioGreen, audioYellow, audioRed].forEach(a => { a.pause(); a.currentTime = 0; });
         }
 
         // --- PORTAL MARATHON LOGIC (SLIDE 5) ---
@@ -761,25 +761,25 @@
                 icon: '🌀',
                 title: 'ПОРТАЛ ВРЕМЕНИ',
                 desc: '«Общайтесь так, будто вы из 2050 года». Что будет с технологиями через 25 лет?',
-                color: '#00f2ff' // Blue
+                color: '#00f2ff'
             },
             {
                 icon: '🎭',
                 title: 'ПОРТАЛ РОЛЕЙ',
                 desc: '«Ты — ментор, ты — новичок». Опытный учит, новичок спрашивает.',
-                color: '#bd00ff' // Purple
+                color: '#bd00ff'
             },
             {
                 icon: '🤫',
                 title: 'ПОРТАЛ ТИШИНЫ',
                 desc: '60 секунд без слов. Общайтесь жестами, мимикой и рисунками в воздухе.',
-                color: '#ffea00' // Yellow
+                color: '#ffea00'
             },
             {
                 icon: '🎲',
                 title: 'ПОРТАЛ ХАОСА',
                 desc: 'Случайный вопрос от AI: «Какой твой самый странный навык?»',
-                color: '#ff3333' // Red
+                color: '#ff3333'
             }
         ];
 
@@ -787,7 +787,7 @@
             resetPortalMarathon();
             let round = 1;
             const totalRounds = 3;
-            const roundDuration = 60; // seconds
+            const roundDuration = 60;
 
             function startRound() {
                 if (round > totalRounds) {
@@ -795,10 +795,8 @@
                     return;
                 }
 
-                // Pick random mode
                 const mode = portalModes[Math.floor(Math.random() * portalModes.length)];
                 
-                // Update UI
                 portalScreen.classList.add('portal-active');
                 portalRoundEl.textContent = `Раунд ${round} из ${totalRounds}`;
                 portalRoundEl.style.color = mode.color;
@@ -810,10 +808,8 @@
                 portalTitleEl.style.color = mode.color;
                 portalDescEl.textContent = mode.desc;
 
-                // Play sound
                 audioPortal.play().catch(e => {});
 
-                // Timer logic
                 let timeLeft = roundDuration;
                 portalTimerEl.textContent = formatTime(timeLeft);
 
