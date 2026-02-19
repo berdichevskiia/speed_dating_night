@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed-Dating: Участники</title>
+    <style>
+        :root {
+            --bg: #000;
+            --text: #fff;
+            --muted: #aaa;
+            --blue: #00f2ff;
+            --green: #00ff9d;
+            --purple: #bd00ff;
+            --yellow: #ffea00;
+            --red: #ff3333;
+            --card: #111;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Slides */
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin: 30px 0 20px;
+            color: #fff;
+        }
+
+        p, li {
+            font-size: clamp(1.3rem, 2.5vw, 2rem);
+            line-height: 1.5;
+            color: var(--text);
+            margin: 10px 0;
+        }
+
+        .subtitle {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            color: var(--muted);
+            margin-bottom: 40px;
+        }
+
+        /* Badges */
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .badge {
+            padding: 20px 35px;
+            border-radius: 16px;
+            font-size: clamp(1.2rem, 2vw, 1.8rem);
+            font-weight: bold;
+            color: #000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .badge.blue { background: var(--blue); box-shadow: 0 0 30px rgba(0,242,255,0.4); }
+        .badge.green { background: var(--green); box-shadow: 0 0 30px rgba(0,255,157,0.4); }
+        .badge.purple { background: var(--purple); color: #fff; box-shadow: 0 0 30px rgba(189,0,255,0.4); }
+        .badge.yellow { background: var(--yellow); box-shadow: 0 0 30px rgba(255,234,0,0.4); }
+
+        /* Final constellation */
+        .final-steps {
+            text-align: left;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+
+        .final-steps li {
+            margin: 25px 0;
+            padding-left: 40px;
+            position: relative;
+        }
+
+        .final-steps li::before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+            font-size: 1.5rem;
+        }
+
+        /* Progress & Nav */
+        .progress {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--blue), var(--purple), var(--green));
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .nav-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 15px 30px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auto-toggle {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .auto-toggle.active {
+            background: var(--green);
+            color: #000;
+            border-color: var(--green);
+        }
+
+        /* Slide numbers */
+        .slide-number {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            font-size: 1.2rem;
+            color: var(--muted);
+            z-index: 100;
+        }
+
+        /* Rule box */
+        .rule-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px 50px;
+            margin: 30px 0;
+            border: 2px solid var(--blue);
+        }
+
+        .rule-box strong {
+            color: var(--blue);
+            font-size: 1.4em;
+        }
+
+        /* TIMER STYLES (Slide 3) */
+        .timer-container {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .timer-display {
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: var(--blue);
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+            min-width: 300px;
+        }
+
+        .timer-status {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            min-height: 1.5em;
+        }
+
+        .timer-btn {
+            background: var(--blue);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+            transition: all 0.2s;
+        }
+
+        .timer-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.6);
+        }
+
+        .timer-btn:disabled {
+            background: #444;
+            color: #888;
+            box-shadow: none;
+            cursor: default;
+            transform: none;
+        }
+
+        .timer-break {
+            color: var(--yellow);
+            text-shadow: 0 0 20px rgba(255, 234, 0, 0.5);
+        }
+        
+        .timer-round2 {
+            color: var(--purple);
+            text-shadow: 0 0 20px rgba(189, 0, 255, 0.5);
+        }
+
+        /* INTERACTIVE SIGNAL STYLES (Slide 4) */
+        .interactive-signal-container {
+            width: 100%;
+            height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            margin: 20px 0;
+            transition: background 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .signal-content {
+            z-index: 2;
+            text-align: center;
+        }
+
+        .signal-icon-large {
+            font-size: clamp(5rem, 15vw, 12rem);
+            margin-bottom: 20px;
+            display: block;
+            filter: drop-shadow(0 0 30px rgba(255,255,255,0.3));
+        }
+
+        .signal-text-large {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .signal-subtext {
+            font-size: clamp(1.2rem, 2vw, 2rem);
+            opacity: 0.9;
+        }
+
+        /* States for Interactive Signal */
+        .state-green { background: radial-gradient(circle, rgba(0,255,157,0.2) 0%, rgba(0,0,0,1) 70%); }
+        .state-green .signal-icon-large { color: var(--green); }
+        .state-green .signal-text-large { color: var(--green); text-shadow: 0 0 20px var(--green); }
+
+        .state-yellow { background: radial-gradient(circle, rgba(255,234,0,0.2) 0%, rgba(0,0,0,1) 70%); }
+        .state-yellow .signal-icon-large { color: var(--yellow); }
+        .state-yellow .signal-text-large { color: var(--yellow); text-shadow: 0 0 20px var(--yellow); }
+
+        .state-red { background: radial-gradient(circle, rgba(255,51,51,0.2) 0%, rgba(0,0,0,1) 70%); }
+        .state-red .signal-icon-large { color: var(--red); }
+        .state-red .signal-text-large { color: var(--red); text-shadow: 0 0 20px var(--red); }
+
+        .pulse-anim { animation: pulse-bg 2s infinite; }
+
+        @keyframes pulse-bg {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .control-panel {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .control-btn {
+            padding: 15px 30px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-start { background: var(--green); color: #000; }
+        .btn-stop { background: var(--red); color: #fff; }
+        .btn-reset { background: #333; color: #fff; }
+
+        .control-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+        .control-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* PORTAL INTERACTIVE STYLES (Slide 5) */
+        .portal-screen {
+            width: 90%;
+            max-width: 1200px;
+            height: 60vh;
+            border: 4px solid var(--purple);
+            border-radius: 20px;
+            background: rgba(189, 0, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .portal-content {
+            z-index: 2;
+            text-align: center;
+        }
+
+        .portal-icon {
+            font-size: clamp(4rem, 10vw, 8rem);
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .portal-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: var(--purple);
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .portal-desc {
+            font-size: clamp(1.2rem, 2vw, 1.8rem);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .portal-timer {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 2rem;
+            font-family: monospace;
+            color: var(--purple);
+            border: 2px solid var(--purple);
+            padding: 5px 15px;
+            border-radius: 10px;
+        }
+
+        .portal-round-indicator {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 1.5rem;
+            color: var(--muted);
+        }
+
+        .portal-bg-effect {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(189,0,255,0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .portal-active .portal-bg-effect { opacity: 1; animation: pulse-bg 3s infinite; }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress" id="progress"></div>
+    <div class="slide-number"><span id="currentSlide">1</span>/<span id="totalSlides">6</span></div>
+
+    <!-- Slide 1: Welcome -->
+    <div class="slide active" data-index="0">
+        <h1>🚀 Speed-Dating</h1>
+        <p class="subtitle">Знакомства. Идеи. Связи.</p>
+        <p style="font-size: clamp(1.5rem, 3vw, 2.2rem); color: var(--muted);">
+            Ваша миссия: найти интересных людей и создать что-то новое
+        </p>
+        <p style="margin-top: 40px; font-size: 1.5rem;" class="pulse">→ Следуйте за сигналами и наслаждайтесь процессом</p>
+    </div>
+
+    <!-- Slide 2: Tips (Moved from 7) -->
+    <div class="slide" data-index="1">
+        <h2>💡 Советы участникам</h2>
+        
+        <div style="max-width: 800px; margin: 30px auto; text-align: left;">
+            <p style="margin: 20px 0;">✅ <strong>Будьте открыты</strong> — здесь нет «неправильных» ответов</p>
+            <p style="margin: 20px 0;">✅ <strong>Задавайте вопросы</strong> — искренний интерес открывает двери</p>
+            <p style="margin: 20px 0;">✅ <strong>Не бойтесь пауз</strong> — иногда лучшие идеи рождаются в тишине</p>
+            <p style="margin: 20px 0;">✅ <strong>Обменивайтесь контактами</strong> — если почувствовали искру</p>
+            <p style="margin: 20px 0;">✅ <strong>Получайте удовольствие</strong> — это главное правило</p>
+        </div>
+        
+        <p style="margin-top: 40px; font-size: 2rem; color: var(--blue);">
+            🚀 Готовы? Поехали!
+        </p>
+    </div>
+
+    <!-- Slide 3: Badges + TIMER -->
+    <div class="slide" data-index="2">
+        <h2>🎨 Ваши цвета</h2>
+        <p class="subtitle">Найдите свой бейдж и общайтесь искренне — без имён и должностей</p>
+        
+        <div class="badges">
+            <div class="badge blue">🔵 Интеллект</div>
+            <div class="badge green">🟢 Креатив</div>
+            <div class="badge purple">🟣 Энергия</div>
+            <div class="badge yellow">🟡 Практика</div>
+        </div>
+        
+        <div class="rule-box">
+            <strong>Правило 90 секунд:</strong><br>
+            «Что вас вдохновляет? Какую проблему вы бы хотели решить?»
+        </div>
+
+        <!-- TIMER COMPONENT -->
+        <div class="timer-container">
+            <div class="timer-status" id="timerStatus">Готовы начать?</div>
+            <div class="timer-display" id="timerDisplay">01:30</div>
+            <button class="timer-btn" id="startTimerBtn" onclick="startRoundTimer()">▶ СТАРТ</button>
+        </div>
+    </div>
+
+    <!-- Slide 4: Interactive Timing -->
+    <div class="slide" data-index="3">
+        <h2>⏱️ Живой тайминг</h2>
+        <p class="subtitle">Следите за экраном и музыкой</p>
+        
+        <!-- INTERACTIVE SIGNAL AREA -->
+        <div class="interactive-signal-container" id="signalContainer">
+            <div class="signal-content">
+                <span class="signal-icon-large" id="signalIcon">🟢</span>
+                <span class="signal-text-large" id="signalText">ОЖИДАНИЕ</span>
+                <span class="signal-subtext" id="signalSub">Нажмите СТАРТ для начала раунда</span>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button class="control-btn btn-start" onclick="startInteractiveCycle()">▶ ЗАПУСТИТЬ ЦИКЛ</button>
+            <button class="control-btn btn-reset" onclick="resetInteractiveCycle()">↻ СБРОС</button>
+        </div>
+        
+        <p style="margin-top: 30px; color: var(--muted); font-size: 1rem;">
+            🎧 Музыкальный фон будет меняться автоматически
+        </p>
+    </div>
+
+    <!-- Slide 5: Portals (Interactive) -->
+    <div class="slide" data-index="4">
+        <h2>🪐 Генератор Реальности</h2>
+        <p class="subtitle">3 раунда по 1 минуте. Случайные режимы.</p>
+        
+        <div class="portal-screen" id="portalScreen">
+            <div class="portal-bg-effect"></div>
+            <div class="portal-round-indicator" id="portalRound">Раунд: --</div>
+            <div class="portal-timer" id="portalTimer">01:00</div>
+            
+            <div class="portal-content">
+                <span class="portal-icon" id="portalIcon">❓</span>
+                <h3 class="portal-title" id="portalTitle">Нажмите СТАРТ</h3>
+                <p class="portal-desc" id="portalDesc">Система выберет случайный режим общения для вас и вашего собеседника.</p>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button class="control-btn btn-start" onclick="startPortalMarathon()">▶ ЗАПУСТИТЬ МАРАФОН</button>
+            <button class="control-btn btn-reset" onclick="resetPortalMarathon()">↻ СБРОС</button>
+        </div>
+    </div>
+
+    <!-- Slide 6: Final -->
+    <div class="slide" data-index="5">
+        <h2>🌟 Финал: Созвездие</h2>
+        <p class="subtitle">Создадим живую карту наших связей</p>
+        
+        <ul class="final-steps">
+            <li>Получите светящийся стикер у волонтёра</li>
+            <li>Отметьте на большой карте своё «место во вселенной»</li>
+            <li>Нашли единомышленника? Соедините стикеры светодиодной нитью</li>
+            <li>В конце — общее фото нашей «галактики» 📸</li>
+        </ul>
+        
+        <p style="margin-top: 30px; font-size: 1.8rem; color: var(--green);">
+            💫 Каждая связь важна
+        </p>
+    </div>
+
+    <!-- Controls -->
+    <button class="auto-toggle" id="autoToggle">🔁 Авто: ВЫКЛ</button>
+    
+    <div class="nav-controls">
+        <button class="nav-btn" id="prevBtn" disabled>← Назад</button>
+        <button class="nav-btn" id="nextBtn">Вперёд →</button>
+    </div>
+
+    <!-- AUDIO ELEMENTS -->
+    <audio id="audioGreen" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3"></audio>
+    <audio id="audioYellow" src="https://assets.mixkit.co/sfx/preview/mixkit-game-level-music-689.mp3"></audio>
+    <audio id="audioRed" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3"></audio>
+    <audio id="audioPortal" src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-interface-beep-903.mp3"></audio>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const progress = document.getElementById('progress');
+        const currentSlideEl = document.getElementById('currentSlide');
+        const totalSlidesEl = document.getElementById('totalSlides');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const autoToggle = document.getElementById('autoToggle');
+
+        let current = 0;
+        let autoMode = false;
+        let autoInterval = null;
+        const total = slides.length;
+
+        totalSlidesEl.textContent = total;
+
+        function showSlide(index) {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            
+            current = index;
+            currentSlideEl.textContent = index + 1;
+            progress.style.width = `${((index + 1) / total) * 100}%`;
+            
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === total - 1;
+            nextBtn.textContent = index === total - 1 ? '🎉 Завершено' : 'Вперёд →';
+        }
+
+        function nextSlide() {
+            if (current < total - 1) showSlide(current + 1);
+        }
+
+        function prevSlide() {
+            if (current > 0) showSlide(current - 1);
+        }
+
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        autoToggle.addEventListener('click', () => {
+            autoMode = !autoMode;
+            autoToggle.classList.toggle('active', autoMode);
+            autoToggle.textContent = autoMode ? '🔁 Авто: ВКЛ' : '🔁 Авто: ВЫКЛ';
+            
+            if (autoMode) {
+                autoInterval = setInterval(() => {
+                    if (current < total - 1) nextSlide();
+                    else setTimeout(() => showSlide(0), 3000);
+                }, 15000);
+            } else {
+                clearInterval(autoInterval);
+            }
+        });
+
+        showSlide(0);
+
+        // --- TIMER LOGIC (SLIDE 3) ---
+        let timerInterval;
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerStatus = document.getElementById('timerStatus');
+        const timerBtn = document.getElementById('startTimerBtn');
+        let isTimerRunning = false;
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function startRoundTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            timerBtn.disabled = true;
+            timerBtn.textContent = "⏳ ИДЁТ...";
+
+            let timeLeft = 90;
+            let phase = 1;
+
+            timerDisplay.classList.remove('timer-break', 'timer-round2');
+            timerDisplay.style.color = 'var(--blue)';
+            timerStatus.textContent = "РАУНД 1: НАЧАЛО";
+            timerDisplay.textContent = formatTime(timeLeft);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = formatTime(timeLeft);
+
+                if (timeLeft <= 0) {
+                    if (phase === 1) {
+                        phase = 2; timeLeft = 10;
+                        timerDisplay.classList.add('timer-break');
+                        timerDisplay.style.color = 'var(--yellow)';
+                        timerStatus.textContent = "🛑 ПЕРЕРЫВ (10 сек)";
+                    } else if (phase === 2) {
+                        phase = 3; timeLeft = 90;
+                        timerDisplay.classList.remove('timer-break');
+                        timerDisplay.classList.add('timer-round2');
+                        timerDisplay.style.color = 'var(--purple)';
+                        timerStatus.textContent = "РАУНД 2: ФИНАЛ";
+                    } else {
+                        clearInterval(timerInterval);
+                        timerDisplay.textContent = "00:00";
+                        timerStatus.textContent = "✅ ВРЕМЯ ВЫШЛО";
+                        timerBtn.textContent = "↻ ПОВТОРИТЬ";
+                        timerBtn.disabled = false;
+                        isTimerRunning = false;
+                    }
+                }
+            }, 1000);
+        }
+
+        // --- INTERACTIVE CYCLE LOGIC (SLIDE 4) ---
+        let cycleInterval;
+        const signalContainer = document.getElementById('signalContainer');
+        const signalIcon = document.getElementById('signalIcon');
+        const signalText = document.getElementById('signalText');
+        const signalSub = document.getElementById('signalSub');
+        
+        const audioGreen = document.getElementById('audioGreen');
+        const audioYellow = document.getElementById('audioYellow');
+        const audioRed = document.getElementById('audioRed');
+
+        function playSound(type) {
+            audioGreen.pause(); audioGreen.currentTime = 0;
+            audioYellow.pause(); audioYellow.currentTime = 0;
+            audioRed.pause(); audioRed.currentTime = 0;
+
+            if (type === 'green') audioGreen.play().catch(e => {});
+            if (type === 'yellow') audioYellow.play().catch(e => {});
+            if (type === 'red') audioRed.play().catch(e => {});
+        }
+
+        function startInteractiveCycle() {
+            resetInteractiveCycle();
+            setSignalState('green', '🟢', 'НАЧАЛО ДИАЛОГА', 'Энергия растёт. Знакомьтесь!', 'pulse-anim');
+            playSound('green');
+
+            setTimeout(() => {
+                setSignalState('yellow', '🟡', 'ПИК ОБЩЕНИЯ', 'Углубляйте тему. Обменивайтесь идеями.', 'pulse-anim');
+                playSound('yellow');
+            }, 45000); 
+
+            setTimeout(() => {
+                setSignalState('red', '🔴', 'ЗАВЕРШАЙТЕ', 'Поделитесь главным выводом.', '');
+                playSound('red');
+            }, 90000); 
+        }
+
+        function setSignalState(colorClass, icon, text, sub, animClass) {
+            signalContainer.classList.remove('state-green', 'state-yellow', 'state-red', 'pulse-anim');
+            signalContainer.classList.add(`state-${colorClass}`);
+            if(animClass) signalContainer.classList.add(animClass);
+            signalIcon.textContent = icon;
+            signalText.textContent = text;
+            signalSub.textContent = sub;
+        }
+
+        function resetInteractiveCycle() {
+            signalContainer.classList.remove('state-green', 'state-yellow', 'state-red', 'pulse-anim');
+            signalIcon.textContent = '⏸️';
+            signalText.textContent = 'ОЖИДАНИЕ';
+            signalSub.textContent = 'Нажмите СТАРТ для начала раунда';
+            audioGreen.pause(); audioYellow.pause(); audioRed.pause();
+        }
+
+        // --- PORTAL MARATHON LOGIC (SLIDE 5) ---
+        let portalInterval;
+        const portalScreen = document.getElementById('portalScreen');
+        const portalRoundEl = document.getElementById('portalRound');
+        const portalTimerEl = document.getElementById('portalTimer');
+        const portalIconEl = document.getElementById('portalIcon');
+        const portalTitleEl = document.getElementById('portalTitle');
+        const portalDescEl = document.getElementById('portalDesc');
+        const audioPortal = document.getElementById('audioPortal');
+
+        const portalModes = [
+            {
+                icon: '🌀',
+                title: 'ПОРТАЛ ВРЕМЕНИ',
+                desc: '«Общайтесь так, будто вы из 2050 года». Что будет с технологиями через 25 лет?',
+                color: '#00f2ff' // Blue
+            },
+            {
+                icon: '🎭',
+                title: 'ПОРТАЛ РОЛЕЙ',
+                desc: '«Ты — ментор, ты — новичок». Опытный учит, новичок спрашивает.',
+                color: '#bd00ff' // Purple
+            },
+            {
+                icon: '🤫',
+                title: 'ПОРТАЛ ТИШИНЫ',
+                desc: '60 секунд без слов. Общайтесь жестами, мимикой и рисунками в воздухе.',
+                color: '#ffea00' // Yellow
+            },
+            {
+                icon: '🎲',
+                title: 'ПОРТАЛ ХАОСА',
+                desc: 'Случайный вопрос от AI: «Какой твой самый странный навык?»',
+                color: '#ff3333' // Red
+            }
+        ];
+
+        function startPortalMarathon() {
+            resetPortalMarathon();
+            let round = 1;
+            const totalRounds = 3;
+            const roundDuration = 60; // seconds
+
+            function startRound() {
+                if (round > totalRounds) {
+                    finishPortalMarathon();
+                    return;
+                }
+
+                // Pick random mode
+                const mode = portalModes[Math.floor(Math.random() * portalModes.length)];
+                
+                // Update UI
+                portalScreen.classList.add('portal-active');
+                portalRoundEl.textContent = `Раунд ${round} из ${totalRounds}`;
+                portalRoundEl.style.color = mode.color;
+                portalTimerEl.style.borderColor = mode.color;
+                portalTimerEl.style.color = mode.color;
+                
+                portalIconEl.textContent = mode.icon;
+                portalTitleEl.textContent = mode.title;
+                portalTitleEl.style.color = mode.color;
+                portalDescEl.textContent = mode.desc;
+
+                // Play sound
+                audioPortal.play().catch(e => {});
+
+                // Timer logic
+                let timeLeft = roundDuration;
+                portalTimerEl.textContent = formatTime(timeLeft);
+
+                portalInterval = setInterval(() => {
+                    timeLeft--;
+                    portalTimerEl.textContent = formatTime(timeLeft);
+
+                    if (timeLeft <= 0) {
+                        clearInterval(portalInterval);
+                        round++;
+                        startRound();
+                    }
+                }, 1000);
+            }
+
+            startRound();
+        }
+
+        function finishPortalMarathon() {
+            portalScreen.classList.remove('portal-active');
+            portalRoundEl.textContent = 'ФИНИШ';
+            portalIconEl.textContent = '🎉';
+            portalTitleEl.textContent = 'МАРАФОН ЗАВЕРШЕН';
+            portalDescEl.textContent = 'Отличная работа! Переходите к следующему этапу.';
+            portalTimerEl.textContent = '--:--';
+        }
+
+        function resetPortalMarathon() {
+            clearInterval(portalInterval);
+            portalScreen.classList.remove('portal-active');
+            portalRoundEl.textContent = 'Раунд: --';
+            portalIconEl.textContent = '❓';
+            portalTitleEl.textContent = 'Нажмите СТАРТ';
+            portalDescEl.textContent = 'Система выберет случайный режим общения для вас и вашего собеседника.';
+            portalTimerEl.textContent = '01:00';
+            audioPortal.pause();
+        }
+
+        // Touch support
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+        document.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) { if (diff > 0) nextSlide(); else prevSlide(); }
+        });
+    </script>
+</body>
+</html>
